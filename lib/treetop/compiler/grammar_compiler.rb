@@ -21,12 +21,21 @@ module Treetop
 
       # compile a string containing treetop source into ruby
       def ruby_source_from_string(s)
+        _, ruby = compile_to_ast_and_ruby(s)
+        ruby
+      end
+
+      # Compiles the source and returns [metagrammar_root_node, ruby_source].
+      # When branch coverage is enabled the AST carries the same choice branch
+      # ids (via Compiler.choice_branch_registry) that appear in ruby_source.
+      def compile_to_ast_and_ruby(s)
         parser = MetagrammarParser.new
         result = parser.parse(s)
         unless result
           raise RuntimeError.new(parser.failure_reason)
         end
-        result.compile
+        Treetop::Compiler.reset_choice_branch_registry! if Treetop::Compiler.branch_coverage?
+        [result, result.compile]
       end
     end
   end

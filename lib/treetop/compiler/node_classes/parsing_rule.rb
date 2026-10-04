@@ -23,11 +23,13 @@ module Treetop
           builder.assign 'start_index', 'index'
           generate_cache_lookup(builder)
           builder.newline
-          parsing_expression.compile(expression_address, builder)
-          builder.newline
-          generate_cache_storage(builder, result_var)
-          builder.newline          
-          builder << result_var
+          builder.with_rule_name(name) do
+            parsing_expression.compile(expression_address, builder)
+            builder.newline
+            generate_cache_storage(builder, result_var)
+            builder.newline
+            builder << result_var
+          end
         end
       end
       

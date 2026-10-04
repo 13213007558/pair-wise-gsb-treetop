@@ -104,6 +104,21 @@ module Treetop
       def reset_addresses
         address_space.reset_addresses
       end
+
+      # Stack of names of the parsing rules currently being compiled. It lets
+      # node classes (e.g. Choice) find the rule they belong to.
+      def current_rule_name
+        @rule_name_stack && @rule_name_stack.last
+      end
+
+      def with_rule_name(name)
+        @rule_name_stack ||= []
+        @rule_name_stack.push(name)
+        yield
+      ensure
+        @rule_name_stack.pop
+      end
+      
       
       private
       

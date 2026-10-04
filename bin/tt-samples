@@ -1,0 +1,51 @@
+#!/usr/bin/env ruby
+require 'optparse'
+require 'json'
+
+$LOAD_PATH.unshift(File.expand_path(File.join(File.dirname(__FILE__), '..', 'lib')))
+require 'treetop/sample/sample_generator'
+require 'treetop/sample/report_formatter'
+
+options = {
+  domain: nil,
+  max_depth: 5,
+  max_repeat: 3,
+  max_length: 6,
+  sample_budget: 500,
+  format: 'text'
+}
+
+OptionParser.new do |opts|
+  opts.banner = 'Usage: tt-samples [options] grammar.treetop'
+  opts.separator ''
+  opts.separator 'Generates short samples and reports which ordered-choice'
+  opts.separator 'branches they really cover, plus proven-unreachable branches'
+  opts.separator 'and branches left unknown (embedded Ruby) or unfound (budget).'
+  opts.separator ''
+  opts.on('-d', '--domain CHARS', 'comma separated alphabet, e.g. "a,b,c" or named sets (lower,digit,alnum,printable)') { |v| options[:domain] = v }
+  opts.on('--max-depth N', Integer, 'nonterminal unfolding budget (default 5)') { |v| options[:max_depth] = v }
+  opts.on('--max-repeat N', Integer, 'repetition unroll budget (default 3)') { |v| options[:max_repeat] = v }
+  opts.on('--max-length N', Integer, 'maximum sample length (default 6)') { |v| options[:max_length] = v }
+  opts.on('--budget N', Integer, 'maximum number of samples (default 500)') { |v| options[:sample_budget] = v }
+  opts.on('--format FMT', 'text (default) or json') { |v| options[:format] = v }
+  opts.on('-h', '--help', 'show help') { puts opts; exit }
+end.parse!
+
+grammar_path = ARGV.first
+abort('error: a grammar file is required') unless grammar_path
+
+report =
+  Treetop::Sample.for_path(
+    grammar_path,
+    domain: options[:domain],
+    max_depth: options[:max_depth],
+    max_repeat: options[:max_repeat],
+    max_length: options[:max_length],
+    sample_budget: options[:sample_budget]
+  )
+
+if options[:format] == 'json'
+  puts JSON.pretty_generate(Treetop::Sample::ReportFormatter.to_h(report))
+else
+  puts Treetop::Sample::ReportFormatter.to_text(report)
+end

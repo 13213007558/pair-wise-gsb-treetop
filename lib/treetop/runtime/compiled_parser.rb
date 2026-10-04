@@ -15,6 +15,7 @@ module Treetop
       def parse(input, options = {})
         prepare_to_parse(input)
         @index = options[:index] if options[:index]
+        branch_recorder&.reset_parse!
         result = send("_nt_#{options[:root] || root}")
         should_consume_all = options.include?(:consume_all_input) ? options[:consume_all_input] : consume_all_input?
         if (should_consume_all && index != input.size)
@@ -23,8 +24,13 @@ module Treetop
           end
           return nil
         end
+        branch_recorder&.commit_parse! if result
         return SyntaxNode.new(input, index...(index + 1)) if result == true
         return result
+      end
+
+      def branch_recorder
+        Thread.current[:treetop_branch_recorder]
       end
 
       def failure_index
@@ -69,7 +75,7 @@ module Treetop
         @input = input
         @input_length = input.length
         reset_index
-        @node_cache = Hash.new {|hash, key| hash[key] = Hash.new}
+        @node_cache = branch_recording? ? NonCachingCache.new : Hash.new {|hash, key| hash[key] = Hash.new}
         @regexps = {}
         @terminal_failures = []
         @max_terminal_failure_index = 0
@@ -127,12 +133,39 @@ module Treetop
           @max_terminal_failure_index = index
           @terminal_failures = []
         end
+
         @terminal_failures << [index, expected_string, unexpected]
         # It's very slow, but this shows the last 5 nested rules:
         # caller.reject{|l| l =~ /`loop'|`block in /}[0..5].reverse.map{|l| l.sub(/[^`]*`_nt_/,'').sub(/'/,'')}
 
         terminal_failures
         return nil
+      end
+
+      def branch_recording?
+        !branch_recorder.nil?
+      end
+
+      # Behaves like the per-rule cache Hash used by generated parsers, but every
+      # lookup misses and writes are discarded. Disabling memoisation while an
+      # instrumented parse runs keeps branch hits tied to the derivation that
+      # actually succeeds, so speculative (later-abandoned) attempts can not
+      # poison the recorded coverage.
+      class NonCachingCache
+        class EmptyRuleCache
+          def has_key?(_index)
+            false
+          end
+
+          def []=(_index, value)
+            value
+          end
+        end
+
+        EMPTY = EmptyRuleCache.new
+        def [](_key)
+          EMPTY
+        end
       end
     end
   end
