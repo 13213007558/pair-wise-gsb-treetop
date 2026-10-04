@@ -73,6 +73,14 @@ puts parser.parse('silly generativists!')  # => nil
 ```
 Note that once a choice rule has matched the text using a particular alternative at a particular location in the input and hence has succeeded, that choice will never be reconsidered, even if the chosen alternative causes another rule to fail where a later alternative wouldn't have. It's always a later alternative, since the first to succeed is final - why keep looking when you've found what you wanted? This is a feature of PEG parsers that you need to understand if you're going to succeed in using Treetop. In order to memoize success and failures, such decisions cannot be reversed. Luckily Treetop provides a variety of clever ways you can tell it to avoid making the wrong decisions. But more on that later.
 
+Generating branch-covering samples
+----------------------------------
+When maintaining a grammar, it can be difficult to tell whether an ordered-choice branch can still be selected. The bundled `tt-samples` tool takes a compiled Treetop grammar (that is, a `.treetop` or `.tt` source file) and an explicit input character domain, generates short bounded candidates, and runs the generated parser on each candidate. Coverage is read from the successful parser result tree, including branches reached inside a successful syntactic lookahead; candidates attempted and then rolled back are not reported as covered.
+
+    tt-samples my_grammar.treetop ab --max-length 3 --format json
+
+The report labels each choice branch as `covered`, `unreachable`, `unknown`, or `not_found`. `unreachable` means the tool proved within its bounded syntactic analysis that an earlier ordered choice always wins. `unknown` is used when an embedded Ruby semantic predicate prevents that proof. `not_found` means no accepting input was found before the search budget was exhausted, without proving the branch unreachable.
+
 Sequences
 ---------
 Sequences are composed of other parsing expressions separated by spaces. Using sequences, we can tighten up the above grammar.

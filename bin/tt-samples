@@ -1,0 +1,54 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+
+$LOAD_PATH.unshift(File.expand_path('../lib', __dir__))
+require 'treetop'
+require 'treetop/sample_generator'
+require 'treetop/sample_report'
+
+options = {
+  format: 'text',
+  max_length: 4,
+  search_budget: 1_000
+}
+
+parser = OptionParser.new do |opts|
+  opts.banner = 'Usage: tt-samples [options] GRAMMAR ALPHABET'
+
+  opts.on('-r', '--root RULE', 'Root rule name') do |root|
+    options[:root] = root.to_sym
+  end
+
+  opts.on('-n', '--max-length N', Integer, 'Maximum generated input length') do |value|
+    options[:max_length] = value
+  end
+
+  opts.on('-b', '--budget N', Integer, 'Maximum number of candidates to run through the parser') do |value|
+    options[:search_budget] = value
+  end
+
+  opts.on('-f', '--format FORMAT', %w[text json], 'Output format (text or json)') do |format|
+    options[:format] = format
+  end
+
+  opts.on('-h', '--help', 'Show help') do
+    puts opts
+    exit
+  end
+end
+
+grammar_path, alphabet = parser.parse!(ARGV)
+unless grammar_path && alphabet && !alphabet.empty?
+  abort parser.to_s
+end
+
+result = Treetop::SampleGenerator.generate(
+  Treetop::SampleGenerator.load_grammar(grammar_path),
+  alphabet,
+  root: options[:root],
+  max_length: options[:max_length],
+  search_budget: options[:search_budget]
+)
+
+puts options[:format] == 'json' ? Treetop::SampleReport.json(result) : Treetop::SampleReport.text(result)

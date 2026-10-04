@@ -134,6 +134,20 @@ module Treetop
         terminal_failures
         return nil
       end
+
+      def treetop_mark_choice_coverage(node, branch_id)
+        unless node.equal?(true)
+          branch_ids = Array(node.instance_variable_get(:@treetop_choice_branches))
+          node.instance_variable_set(:@treetop_choice_branches, branch_ids.push(branch_id))
+        end
+        node
+      end
+
+      def treetop_carry_choice_coverage(node, source)
+        branch_ids = source.instance_variable_get(:@treetop_choice_branches) if source.respond_to?(:instance_variable_get)
+        node.instance_variable_set(:@treetop_choice_branches, branch_ids.dup) if branch_ids
+        node
+      end
     end
   end
 end

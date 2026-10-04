@@ -17,7 +17,7 @@ Gem::Specification.new do |spec|
   spec.licenses = ["MIT"]
 
   spec.files = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(spec|website|script|\.|benchmark)}) }
-  spec.executables = ["tt"]
+  spec.executables = ["tt", "tt-samples"]
   spec.require_paths = ["lib"]
   spec.extra_rdoc_files = [
     "LICENSE",
@@ -30,4 +30,3 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency(%q<rspec>, ["~> 3"])
   spec.add_development_dependency(%q<rake>, ["~> 11"])
 end
-

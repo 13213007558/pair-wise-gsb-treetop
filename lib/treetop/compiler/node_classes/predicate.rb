@@ -19,7 +19,7 @@ module Treetop
       
       def assign_success
         reset_index
-        assign_result epsilon_node
+        assign_result "treetop_carry_choice_coverage(#{epsilon_node}, #{subexpression_result_var})"
       end
     end
     

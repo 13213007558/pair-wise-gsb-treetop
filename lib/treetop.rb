@@ -1,3 +1,5 @@
 require 'treetop/runtime'
 require 'treetop/compiler'
 require 'treetop/polyglot'
+require 'treetop/sample_generator'
+require 'treetop/sample_report'
