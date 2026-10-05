@@ -1,3 +1,12 @@
+== Unreleased
+
+* 1 major enhancement:
+  * Right-recursive rules (direct and mutual) are compiled to an explicit-stack
+    machine instead of nested Ruby method calls, so long right-recursive lists
+    no longer exhaust the Ruby call stack. Inapplicable grammars with embedded
+    Ruby (semantic predicates, node class declarations or inline modules on the
+    recursive reference) are reported at compile time.
+
 == 1.4.1 2009-09-04
 
 * several enhancements:

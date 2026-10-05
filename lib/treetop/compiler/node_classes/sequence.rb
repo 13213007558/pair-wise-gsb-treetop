@@ -32,6 +32,24 @@ module Treetop
           end
         end
       end
+
+      # Compiles the elements preceding a right-recursive tail call into a
+      # method body that returns the accumulator on success, and resets the
+      # index and returns nil on failure. Used by the explicit-stack machine
+      # generated for right-recursive rules (see RightRecursion).
+      def compile_tail_prefix(address, builder, prefix_elements)
+        @address = address
+        @builder = builder
+        use_vars :start_index, :accumulator
+        compile_sequence_elements(prefix_elements)
+        builder.if__ "#{accumulator_var}.last" do
+          builder << accumulator_var
+        end
+        builder.else_ do
+          reset_index
+          builder << 'nil'
+        end
+      end
       
       def sequence_element_accessor_module
         @sequence_element_accessor_module ||= SequenceElementAccessorModule.new(sequence_elements)

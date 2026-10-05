@@ -4,7 +4,12 @@ module Treetop
 
       def compile(builder)
         compile_inline_module_declarations(builder)
-        generate_method_definition(builder)
+        group = builder.right_recursion_plan && builder.right_recursion_plan[name]
+        if group
+          group.compile_rule(self, builder)
+        else
+          generate_method_definition(builder)
+        end
       end
       
       def compile_inline_module_declarations(builder)

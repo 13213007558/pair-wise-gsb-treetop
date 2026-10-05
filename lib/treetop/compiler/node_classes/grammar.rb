@@ -3,6 +3,7 @@ module Treetop
     class Grammar < Runtime::SyntaxNode
       def compile
         builder = RubyBuilder.new
+        builder.right_recursion_plan = RightRecursion.analyze(grammar_rules)
 
         builder.module_declaration "#{grammar_name.text_value}" do
           builder.in(indent_level) # account for initial indentation of grammar declaration
@@ -24,6 +25,12 @@ module Treetop
 
       def parser_name
         grammar_name.text_value + 'Parser'
+      end
+
+      private
+
+      def grammar_rules
+        declaration_sequence.respond_to?(:rules) ? declaration_sequence.rules : []
       end
     end
   end

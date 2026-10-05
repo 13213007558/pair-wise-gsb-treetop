@@ -5,6 +5,7 @@ module Treetop
     class RubyBuilder
       
       attr_reader :level, :address_space, :ruby
+      attr_accessor :right_recursion_plan
       
       def initialize
         @level = 0

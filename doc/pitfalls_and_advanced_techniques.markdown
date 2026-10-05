@@ -8,6 +8,18 @@ An weakness shared by all recursive descent parsers is the inability to parse le
     
 Logically it should match a list of 'a' characters. But it never consumes anything, because attempting to recognize `left_recursive` begins by attempting to recognize `left_recursive`, and so goes an infinite recursion. There's always a way to eliminate these types of structures from your grammar. There's a mechanistic transformation called _left factorization_ that can eliminate it, but it isn't always pretty, especially in combination with automatically constructed syntax trees. So far, I have found more thoughtful ways around the problem. For instance, in the interpreter example I interpret inherently left-recursive function application right recursively in syntax, then correct the directionality in my semantic interpretation. You may have to be clever.
 
+##Right Recursion
+Right-recursive rules (rules that recurse at the *end* of an alternative) are valid in parsing expression grammars, but a naive recursive descent parser consumes one Ruby call frame per recursion level, so a long right-recursive list can exhaust the Ruby call stack. Treetop detects direct and mutually right-recursive rules at compile time and compiles them to an explicit-stack machine that runs iteratively, so grammars like this one work for lists of any length:
+
+    rule list
+      head:item ',' tail:list / last:item
+    end
+
+The generated parser produces the same syntax trees, capture intervals, memoization and error positions as it would with plain recursive descent. A group of recursive rules is compiled this way when every recursive reference appears in tail position as a bare nonterminal (optionally labeled or parenthesized). Some grammars cannot be compiled this way:
+
+* Semantic predicates (&{...} or !{...}) anywhere in a right-recursive rule, and node class declarations or inline modules attached to the recursive reference itself (or wrapped around the whole recursive expression), are reported as errors at compile time because their embedded Ruby cannot be replayed by the explicit-stack machine.
+* Recursion under a suffix (?, *, + or ..), under a prefix (&, ! or ~), nested inside a parenthesized subexpression, or through +super+ cannot be expressed by the machine, so such rules silently fall back to standard recursive compilation (and may still overflow the stack on very deep inputs).
+
 #Advanced Techniques
 Here are a few interesting problems I've encountered. I figure sharing them may give you insight into how these types of issues are addressed with the tools of parsing expressions.
 
