@@ -8,6 +8,18 @@ module Treetop
         @builder = builder
         @parent_expression = parent_expression
       end
+
+      # Continuation frames of the explicit-stack compiler capture nodes
+      # whose compilation address may have changed since (an alternative is
+      # compiled once per continuation it appears in); this reinstates the
+      # captured address while their code is emitted.
+      def with_compile_address(address)
+        previous_address = @address
+        @address = address
+        yield
+      ensure
+        @address = previous_address
+      end
       
       def node_class_name
         parent_expression && parent_expression.node_class_name || 'SyntaxNode'

@@ -6,6 +6,11 @@ module Treetop
         begin_comment(self)
         use_vars :result, :start_index, :accumulator
         compile_sequence_elements(sequence_elements)
+        compile_result_assignment
+        end_comment(self)
+      end
+
+      def compile_result_assignment
         builder.if__ "#{accumulator_var}.last" do
           assign_result "instantiate_node(#{node_class_name},input, #{start_index_var}...index, #{accumulator_var})"
           extend_result sequence_element_accessor_module_name if sequence_element_accessor_module_name
@@ -15,13 +20,42 @@ module Treetop
           reset_index
           assign_failure start_index_var
         end
-        end_comment(self)
       end
       
       def node_class_name
         node_class_declarations.node_class_name || 'SyntaxNode'
       end
       
+      # Compiles this sequence for a rule that is compiled with an explicit
+      # stack. Only called when the sequence's last element contains a
+      # recursive call in tail position; the call itself is compiled as a
+      # frame push plus a state return, and the accumulation of its result
+      # happens in the continuation (see ExplicitStack::SequenceFrame).
+      def compile_step(address, builder, context, parent_expression, machine)
+        @address = address
+        @builder = builder
+        @parent_expression = parent_expression
+        begin_comment(self)
+        use_vars :result, :start_index, :accumulator
+        compile_sequence_elements_step(sequence_elements, context, machine)
+        compile_result_assignment
+        end_comment(self)
+      end
+
+      def compile_sequence_elements_step(elements, context, machine)
+        obtain_new_subexpression_address
+        if elements.size == 1
+          machine.compile_step_expression(elements.first, subexpression_address, builder, context + [ExplicitStack::SequenceFrame.new(self, subexpression_address)], nil)
+          accumulate_subexpression_result
+        else
+          elements.first.compile(subexpression_address, builder)
+          accumulate_subexpression_result
+          builder.if_ subexpression_success? do
+            compile_sequence_elements_step(elements[1..-1], context, machine)
+          end
+        end
+      end
+
       def compile_sequence_elements(elements)
         obtain_new_subexpression_address
         elements.first.compile(subexpression_address, builder)

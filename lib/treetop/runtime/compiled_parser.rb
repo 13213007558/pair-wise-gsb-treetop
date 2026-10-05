@@ -134,6 +134,42 @@ module Treetop
         terminal_failures
         return nil
       end
+
+      # Drives rules that were compiled with an explicit stack (right-recursive
+      # rules) so that recursion depth does not consume the Ruby call stack.
+      #
+      # The generated step methods return [:__es_call, rule_name, index] when
+      # they reach a recursive call in tail position, having pushed a
+      # continuation frame onto the explicit stack, or [:__es_value, result]
+      # when they produce a result. Continuation frames are arrays of
+      # [method_name, *saved_vars]; invoking them with the inner result yields
+      # the next state.
+      def __es_drive(rule_name, start_index)
+        stack = []
+        state = [:__es_call, rule_name, start_index]
+        loop do
+          if state[0] == :__es_call
+            rule_name = state[1]
+            start_index = state[2]
+            @index = start_index
+            if node_cache[rule_name].has_key?(start_index)
+              cached = node_cache[rule_name][start_index]
+              if cached
+                node_cache[rule_name][start_index] = cached = SyntaxNode.new(input, start_index...(start_index + 1)) if cached == true
+                @index = cached.interval.end
+              end
+              state = [:__es_value, cached]
+            else
+              state = send("_nt_#{rule_name}__step", stack, start_index)
+            end
+          elsif stack.empty?
+            return state[1]
+          else
+            frame = stack.pop
+            state = send(frame[0], stack, state[1], *frame[1..-1])
+          end
+        end
+      end
     end
   end
 end

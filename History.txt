@@ -1,3 +1,13 @@
+== Unreleased
+
+* 1 major enhancement:
+  * Rules whose recursion appears only in tail position (direct and mutual
+    right recursion) are now compiled with an explicit execution stack, so
+    deeply recursive inputs no longer exhaust the Ruby call stack. Recursive
+    rules embedding Ruby semantic predicate blocks or using `super`, and
+    recursion outside tail position, cannot use the explicit stack; the
+    compiler reports why and falls back to plain recursion.
+
 == 1.4.1 2009-09-04
 
 * several enhancements:

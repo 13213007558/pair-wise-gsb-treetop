@@ -9,7 +9,9 @@ module Treetop
           end
           builder.newline
         end
-        
+
+        ExplicitStack.apply(rules)
+
         declarations.each do |declaration|
           declaration.compile(builder)
           builder.newline
