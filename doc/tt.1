@@ -55,7 +55,12 @@ Write parser source to
 .TP 4
 .B \-f, \-\-force
 
-Overwrite existing output file(s)
+Overwrite existing output file(s).TP 4
+.BI "\-\-left-recursion" " MODE"
+
+Left-recursion check mode: \fBwarn\fR (the default) prints a warning for
+rules that can loop without consuming input; \fBerror\fR rejects such
+grammars by raising Treetop::Compiler::LeftRecursionError.
 .TP 4
 .B \-v, \-\-version
 
