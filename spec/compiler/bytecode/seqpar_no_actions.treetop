@@ -1,0 +1,16 @@
+# Derived from benchmark/seqpar.treetop with the single embedded Ruby action
+# ({ ... } inline module on the 'fit' alternative) removed, so the eval-free
+# bytecode backend can compile it.
+grammar SeqPar
+
+  rule statement
+      'par ' (statement ' ')+ 'end'
+    / 'sequence' ' ' (statement ' ')+ 'end'
+    / 'seq' ' ' (statement ' ')+ 'end'
+    / 'fit' [\s] (statement ' ')+ 'end'
+    / 'art'+ [ ] (statement ' ')+ 'end'
+    / [A-Z] [a-zA-z0-9]*
+  end
+
+end
+

@@ -194,3 +194,40 @@ One case where it is always safe to use a semantic predicate is to invoke the Ru
       end
 
 When the debugger stops here, you can inspect the contents of the SyntaxNode for "word" by looking at s[0], and the stack trace will show how you got there.
+
+Bytecode Compilation (eval-free deployment)
+===========================================
+The standard compiler emits Ruby source that must be `eval`'d (or written to a
+`.rb` file and required) to produce a parser. Deployment environments that
+forbid dynamically evaluating Ruby source can instead use the bytecode
+backend, which compiles a grammar into a versioned, data-only artifact and
+executes it with an interpreter:
+
+    # Compile once (e.g. at build or CI time):
+    require 'treetop'
+    Treetop::Compiler::BytecodeCompiler.new.compile('my_grammar.treetop')
+    # writes my_grammar.ttc (or use: tt --bytecode my_grammar.treetop)
+
+    # Later, in the restricted environment, no Ruby source is evaluated:
+    require 'treetop'
+    parser = Treetop.load_bytecode('my_grammar.ttc').new
+    parser.parse('hello chomsky')
+
+The interpreter supports the core PEG expressions (terminals including
+case-insensitive and regular expression terminals, character classes, the
+anything symbol, sequences, ordered choices, repetition including occurrence
+ranges, optional expressions, positive and negative lookahead, and the
+transient prefix), sequence labels, node class declarations, and memoization,
+with parse results and failure reporting matching the eval-based backend.
+
+Grammar features that embed arbitrary Ruby are *not* supported by this
+backend, and are rejected at compile time with
+`Treetop::Compiler::UnsupportedFeatureError`: semantic predicates
+(`&{ ... }` / `!{ ... }`), inline modules (`{ ... }`), `super`, and
+`include` declarations. No attempt is made to "safely" evaluate embedded
+Ruby.
+
+Artifacts carry a format version, which is verified on load along with all
+jump targets, frame slots, rule references, and constant references; a
+malformed or incompatible artifact raises
+`Treetop::Runtime::BytecodeLoadError` instead of being executed.

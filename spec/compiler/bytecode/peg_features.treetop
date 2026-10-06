@@ -1,0 +1,61 @@
+# Exercises the core PEG constructs supported by the bytecode backend:
+# terminals (exact, case-insensitive, regexp), character classes, anything,
+# sequences with (duplicate) labels, choices, repetition (*, +, n..m),
+# optional, and/not predicates, transient prefix, and nested rules.
+grammar PegFeatures
+  rule expression
+    first:item rest:(space? ',' space? item)* last:(';' space? item)?
+  end
+
+  rule item
+    keyword / number / parened
+  end
+
+  rule keyword
+    ('foo'i / 'bar') ![a-z]
+  end
+
+  rule number
+    [0-9]+ ('.' [0-9]+)?
+  end
+
+  rule parened
+    '(' space? expression space? ')'
+  end
+
+  rule repeated
+    'a'2..4 'b'+
+  end
+
+  rule open_range
+    'x'2.. 'y'
+  end
+
+  rule max_only_range
+    'z'..3 'q'
+  end
+
+  rule predicated
+    &'start' ~'start' !'x' .
+  end
+
+  rule anyword
+    [a-z]+ / .
+  end
+
+  rule regexp_terminal
+    '[0-9]+'r '%'
+  end
+
+  rule duplicates
+    a:keyword ' ' a:keyword ' ' b:keyword
+  end
+
+  rule multibyte
+    'héllo' '世'?
+  end
+
+  rule space
+    ' '+
+  end
+end

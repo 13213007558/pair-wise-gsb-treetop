@@ -49,4 +49,9 @@ module Treetop
     compiler = Treetop::Compiler::GrammarCompiler.new
     Object.class_eval(compiler.ruby_source_from_string(s))
   end
+
+  # load a compiled bytecode artifact without evaluating any Ruby source
+  def self.load_bytecode(path)
+    Treetop::Runtime::BytecodeLoader.load_file(path)
+  end
 end

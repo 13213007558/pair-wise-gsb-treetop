@@ -33,6 +33,10 @@ parser = OptionParser.new do |opts|
     options[:out_file] = fn
   end
 
+  opts.on('-b', '--bytecode', 'Emit an eval-free bytecode artifact (.ttc) instead of Ruby source') do
+    options[:bytecode] = true
+  end
+
   opts.on('-f', '--force', 'Overwrite existing output file(s)') do
     options[:force] = true
   end
@@ -84,7 +88,7 @@ def protect_output?(filename, forced=false)
   false
 end
 
-compiler = Treetop::Compiler::GrammarCompiler.new
+compiler = options[:bytecode] ? Treetop::Compiler::BytecodeCompiler.new : Treetop::Compiler::GrammarCompiler.new
 
 while !file_list.empty?
   treetop_file = file_list.shift
@@ -97,7 +101,7 @@ while !file_list.empty?
 
   # try to compile
   treetop_file = full_grammar_filename(treetop_file)
-  std_output_file = treetop_file.gsub(Treetop::Polyglot::VALID_GRAMMAR_EXT_REGEXP, '.rb')
+  std_output_file = treetop_file.gsub(Treetop::Polyglot::VALID_GRAMMAR_EXT_REGEXP, options[:bytecode] ? '.ttc' : '.rb')
 
   if options[:out_file]
     # explicit output file name option; never overwrite unless forced
