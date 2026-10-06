@@ -37,6 +37,11 @@ parser = OptionParser.new do |opts|
     options[:force] = true
   end
 
+  opts.on('--loop-check MODE', %w(warn error off),
+          'Check for loops that cannot consume input: warn (default), error, off') do |mode|
+    options[:loop_check] = mode.to_sym
+  end
+
   opts.on_tail('-v', '--version', 'Show Treetop version') do
     puts "Treetop v#{Treetop::VERSION::STRING}"
     exit
@@ -84,7 +89,7 @@ def protect_output?(filename, forced=false)
   false
 end
 
-compiler = Treetop::Compiler::GrammarCompiler.new
+compiler = Treetop::Compiler::GrammarCompiler.new(loop_check: options[:loop_check] || :warn)
 
 while !file_list.empty?
   treetop_file = file_list.shift

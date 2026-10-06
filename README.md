@@ -194,3 +194,35 @@ One case where it is always safe to use a semantic predicate is to invoke the Ru
       end
 
 When the debugger stops here, you can inspect the contents of the SyntaxNode for "word" by looking at s[0], and the stack trace will show how you got there.
+
+Static loop checking
+====================
+
+Before a grammar is compiled, Treetop statically checks it for expressions
+that can loop forever without consuming input: left-recursive rule call
+chains and repetitions (`*`, `+`, unbounded `m..n`) whose body can succeed
+on empty input. The analysis combines nullability, lookahead (`&`/`!`) and
+ordered choice, and reports one rule call chain that may not consume input,
+for example:
+
+    Treetop: warning: rule `a` can recurse without consuming input (call chain: a -> b -> a); parsing will loop forever
+
+Recursion that consumes input before re-entering a rule (such as ordinary
+right recursion, or mutually recursive rules that each eat a character per
+round) is perfectly legal and passes the check. When a loop depends on a
+user semantic predicate (`&{ ... }` / `!{ ... }`) that cannot be analyzed
+statically, it is reported as unproven rather than assumed safe.
+
+The compiler's behavior is controlled by the `loop_check` option:
+
+```ruby
+Treetop::Compiler::GrammarCompiler.new(loop_check: :warn)   # default: print warnings
+Treetop::Compiler::GrammarCompiler.new(loop_check: :error)  # reject grammars with proven loops
+Treetop::Compiler::GrammarCompiler.new(loop_check: :off)    # skip the check
+```
+
+In `:error` mode, a grammar containing a loop that is proven to not consume
+input is rejected by raising `Treetop::Compiler::NonConsumingLoopError`;
+loops that cannot be proven either way (because of semantic predicates)
+still only produce warnings. The `tt` command line compiler accepts the
+same setting as `--loop-check warn|error|off`.
