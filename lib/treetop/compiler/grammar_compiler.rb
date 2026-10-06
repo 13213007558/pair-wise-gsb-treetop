@@ -28,6 +28,20 @@ module Treetop
         end
         result.compile
       end
+
+      # compile a treetop file into a bytecode artifact (no ruby source)
+      def compile_bytecode(source_path, target_path = source_path.gsub(/\.(treetop|tt)\Z/, '.ttbc'))
+        program = bytecode_program_from_string(File.read(source_path))
+        File.open(target_path, 'wb') do |target_file|
+          target_file.write(program.dump)
+        end
+        target_path
+      end
+
+      # compile a string containing treetop source into a bytecode program
+      def bytecode_program_from_string(s)
+        BytecodeCompiler.new.compile(s)
+      end
     end
   end
 
@@ -48,5 +62,18 @@ module Treetop
   def self.load_from_string(s)
     compiler = Treetop::Compiler::GrammarCompiler.new
     Object.class_eval(compiler.ruby_source_from_string(s))
+  end
+
+  # compile a treetop source string with the bytecode backend and build a
+  # parser class from the resulting program (no ruby source is evaluated)
+  def self.load_bytecode_from_string(s)
+    Treetop::Compiler::BytecodeCompiler.new.compile(s).build_parser
+  end
+
+  # load a precompiled bytecode artifact (.ttbc) and build its parser class
+  def self.load_bytecode(path)
+    File.open(path, 'rb') do |artifact_file|
+      Treetop::Compiler::BytecodeProgram.load(artifact_file.read).build_parser
+    end
   end
 end

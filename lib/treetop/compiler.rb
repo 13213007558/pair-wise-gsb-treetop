@@ -5,3 +5,5 @@ require 'treetop/compiler/ruby_builder'
 require 'treetop/compiler/node_classes'
 require 'treetop/compiler/metagrammar' unless defined?($exclude_metagrammar)
 require 'treetop/compiler/grammar_compiler'
+require 'treetop/compiler/bytecode_program'
+require 'treetop/compiler/bytecode_compiler'
